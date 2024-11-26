@@ -1,3 +1,11 @@
-arduino car
-controll through bluetooth app andorind
-speed and directhion
+# Arduino Car
+
+> Bluetooth connecthion, moving in four directhions
+
+## Circuit
+
+![Circuit](circuit/arduino_car_bluetooth.png)
+
+## Result
+
+![Result](result.HEIC)
