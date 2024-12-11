@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <SoftwareSerial.h>
 #include "GyverMotor.h"
 
@@ -23,18 +22,23 @@ GMotor motorL(DRIVER3WIRE, LEFT_MOTOR_IN1, LEFT_MOTOR_IN2, LEFT_MOTOR_EN, LEFT_M
 GMotor motorR(DRIVER3WIRE, RIGHT_MOTOR_IN3, RIGHT_MOTOR_IN4, RIGHT_MOTOR_EN, RIGHT_MOTOR_MODE);
 SoftwareSerial BTserial(BT_RX, BT_TX);
 
-boolean doneParsing = false, startParsing = false;
-int dataX = 0, dataY = 0;
+boolean doneParsing = false;
+boolean startParsing = false;
+int dataX = 0;
+int dataY = 0;
 String string_convert;
 
 void setup() {
-  BTserial.begin(9600);
   motorR.setMode(AUTO);
   motorL.setMode(AUTO);
+
   motorR.setMinDuty(minDuty);
   motorL.setMinDuty(minDuty);
+
   motorR.setDirection(RIGHT_MOTOR_DIRECTION);
   motorL.setDirection(LEFT_MOTOR_DIRECTION);
+
+  BTserial.begin(9600);
 }
 
 void loop() {
