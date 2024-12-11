@@ -1,46 +1,10 @@
-/*
-    Библиотека для удобного управления коллекторными моторами через драйвер
-    Документация: https://alexgyver.ru/gyvermotor/
-    GitHub: https://github.com/GyverLibs/GyverMotor
-    Возможности:
-    - Контроль скорости и направления вращения
-    - Работа с 10 битным ШИМом
-    - Плавный пуск и изменение скорости
-    - Порог минимальной скважности
-    - Deadtime
-    - Поддержка 4х типов драйверов
-    
-    AlexGyver, alex@alexgyver.ru
-    https://alexgyver.ru/
-    MIT License
-    
-    Версии:
-    v1.1 - убраны дефайны
-    v1.2 - возвращены дефайны
-    v2.0:
-        - Программный deadtime
-        - Отрицательные скорости
-        - Поддержка двух типов драйверов и реле
-        - Плавный пуск и изменение скорости
-    v2.1: небольшие фиксы и добавления
-    v2.2: оптимизация
-    v2.3: добавлена поддержка esp (исправлены ошибки)
-    v2.4: совместимость с другими библами
-    v2.5: добавлен тип DRIVER2WIRE_NO_INVERT
-    v3.0: переделана логика minDuty, добавлен режим для ШИМ любой битности
-    v3.1: мелкие исправления
-*/
-
 #ifndef GyverMotor_h
 #define GyverMotor_h
 #include <Arduino.h>
-#define _SMOOTH_PRD 50		// таймер smoothTick, мс
+#define _SMOOTH_PRD 50  // smoothTick timer interval in ms
 
 enum GM_driverType {
-    DRIVER2WIRE_NO_INVERT,	// двухпроводной драйвер, в котором при смене направления не нужна инверсия ШИМ
-    DRIVER2WIRE,			// двухпроводной драйвер (направление + ШИМ)
-    DRIVER3WIRE,			// трёхпроводной драйвер (два пина направления + ШИМ)
-    RELAY2WIRE,				// реле в качестве драйвера (два пина направления)
+    DRIVER3WIRE, // three-wire driver (two direction pins + PWM)
 };
 
 #define NORMAL 0
@@ -58,67 +22,54 @@ static const int8_t _GM_NC = -1;	// not connected
 
 class GMotor {
 public:
+    // For a 3-wire driver, usage:
+    // GMotor motor(DRIVER3WIRE, dig_pin_A, dig_pin_B, PWM_pin, (LOW/HIGH))
     GMotor(GM_driverType type, int8_t param1 = _GM_NC, int8_t param2 = _GM_NC, int8_t param3 = _GM_NC, int8_t param4 = _GM_NC);
-    // три варианта создания объекта в зависимости от драйвера:
-    // GMotor motor(DRIVER2WIRE, dig_pin, PWM_pin, (LOW/HIGH) )
-    // GMotor motor(DRIVER3WIRE, dig_pin_A, dig_pin_B, PWM_pin, (LOW/HIGH) )
-    // GMotor motor(RELAY2WIRE, dig_pin_A, dig_pin_B, (LOW/HIGH) )
     
-    // установка скорости 0-255 (8 бит) и 0-1023 (10 бит)
+    // Set speed (0 to maxDuty), supports negative speed for reverse when in AUTO mode
     void setSpeed(int16_t duty);
     
-    // сменить режим работы мотора:	
-    // FORWARD - вперёд
-    // BACKWARD - назад
-    // STOP - остановить
-    // BRAKE - активный тормоз
-    // AUTO - подчиняется setSpeed (-255.. 255)
+    // Set motor mode: FORWARD, BACKWARD, STOP, BRAKE, or AUTO (for setSpeed)
     void setMode(GM_workMode mode);
     
-    // направление вращения	
-    // NORM - обычное
-    // REVERSE - обратное
+    // Set rotation direction (NORMAL or REVERSE)
     void setDirection(bool direction);
     
-    // установить минимальную скважность (при которой мотор начинает крутиться)
+    // Set minimal duty cycle
     void setMinDuty(int duty);
     
-    // установить разрешение ШИМ в битах
+    // Set PWM resolution in bits
     void setResolution(byte bit);
     
-    // установить deadtime (в микросекундах). По умолч 0
+    // Set deadtime in microseconds (default 0)
     void setDeadtime(uint16_t deadtime);	
     
-    // установить уровень драйвера (по умолч. HIGH)
+    // Set driver level (default LOW, logic is inverted internally)
     void setLevel(int8_t level);			
     
-    // плавное изменение к указанной скорости (к значению ШИМ)
+    // Smoothly adjust speed to the given duty. Call smoothTick periodically.
     void smoothTick(int16_t duty);
     
-    // скорость изменения скорости
+    // Set the speed change step for smoothTick
     void setSmoothSpeed(uint8_t speed);	
     
-    // возвращает -1 при вращении BACKWARD, 1 при FORWARD и 0 при остановке и торможении
+    // Returns -1 if BACKWARD, 1 if FORWARD, 0 if STOP/BRAKE
     int getState();
 
-    // внутренняя переменная скважности для отладки
-    int16_t _duty = 0;
-    
-    // свовместимость со старыми версиями
-    // установить выход в 8 бит
+    // For compatibility with older versions
     void set8bitMode();		
-
-    // установить выход в 10 бит
     void set10bitMode();
+    
+    int16_t _duty = 0;
     
 protected:
     void setPins(bool a, bool b, int c);	
-    void run(GM_workMode mode, int16_t duty = 0);		// дать прямую команду мотору (без смены режима)
+    void run(GM_workMode mode, int16_t duty = 0);		
     int16_t _dutyS = 0;
-    int _minDuty = 0, _state = 0;;
+    int _minDuty = 0, _state = 0;
     int8_t _digA = _GM_NC, _digB = _GM_NC, _pwmC = _GM_NC;
     bool _direction = false;
-    int8_t _level = LOW;	// логика инвертирована!
+    int8_t _level = LOW;
     int _maxDuty = 255;
     GM_workMode _mode = FORWARD, _lastMode = FORWARD;
     GM_driverType _type;
